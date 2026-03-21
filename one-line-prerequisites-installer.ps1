@@ -51,7 +51,7 @@ function Write-Warn {
 function Write-Fatal {
     param([string]$msg)
     Write-Host "[ERROR] $msg"
-    throw $msg
+    exit 1
 }
 
 # ---------------------------------------------------------------------------
@@ -140,38 +140,75 @@ function Add-ToPath {
         $env:PATH = ($env:PATH.TrimEnd(';') + ';' + $dir)
     }
 }
+
+function Refresh-EnvironmentPath {
+    # Force refresh PATH from the registry to pick up changes made by installers
+    $userPath = [Environment]::GetEnvironmentVariable('PATH', 'User')
+    $machinePath = [Environment]::GetEnvironmentVariable('PATH', 'Machine')
+    $env:PATH = "$userPath;$machinePath"
+}
+
 function Install-Curl {
-    Write-Step 1 "Installing curl"
+    Write-Step 1 "Installing Curl"
 
     # Detect — skip if already present
     try {
-        $curlVersion = & curl.exe --version 2>&1
-        if ($LASTEXITCODE -eq 0 -and $curlVersion -match 'curl ') {
-            Write-Skip "curl" "already installed"
+        $curlVersion = & curl --version 2>&1
+        if ($curlVersion -match 'curl') {
+            Write-Skip "Curl" "already installed"
             return
         }
     } catch {
         # curl not found — proceed with install
     }
 
-    # Install curl using winget (first-party package source on modern Windows)
+    # Download and install
+    $curlDir = "$env:ProgramFiles\curl"
+    $curlExe = "$curlDir\curl.exe"
+
     try {
         $ErrorActionPreference = 'Stop'
-        if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-            Write-Fatal "curl is missing and winget is unavailable. Install curl manually, then rerun."
+        Write-Host "Creating curl directory..."
+        if (-not (Test-Path $curlDir)) {
+            New-Item -ItemType Directory -Path $curlDir -Force | Out-Null
         }
 
-        Write-Host "Installing curl via winget..."
-        & winget install --id cURL.cURL --exact --accept-package-agreements --accept-source-agreements
-        if ($LASTEXITCODE -ne 0) {
-            throw "winget install cURL.cURL exited with code $LASTEXITCODE"
-        }
+        Write-Host "Downloading curl for Windows..."
+        $url = "https://curl.se/windows/dl-latest/curl-latest-win64-mingw.zip"
+        $zipFile = "$env:TEMP\curl-latest.zip"
+        
+        Invoke-WebRequest -Uri $url -OutFile $zipFile -UseBasicParsing
 
-        Write-Ok "curl installed"
+        Write-Host "Extracting curl..."
+        $extractDir = "$env:TEMP\curl-extract"
+        if (Test-Path $extractDir) { Remove-Item $extractDir -Recurse -Force }
+        
+        Expand-Archive -Path $zipFile -DestinationPath $extractDir -Force
+
+        # Find curl.exe in the extracted directory and copy it
+        $foundCurl = Get-ChildItem -Path $extractDir -Recurse -Filter "curl.exe" | Select-Object -First 1
+        if ($foundCurl) {
+            Copy-Item -Path $foundCurl.FullName -Destination $curlExe -Force
+            Write-Ok "Curl installed"
+        } else {
+            throw "curl.exe not found in downloaded package"
+        }
     } catch {
-        Write-Fatal "curl installation failed: $_"
+        Write-Warn "Curl installation failed: $_"
+        return
+    } finally {
+        if (Test-Path $zipFile) { Remove-Item $zipFile -Force -ErrorAction SilentlyContinue }
+        if (Test-Path $extractDir) { Remove-Item $extractDir -Recurse -Force -ErrorAction SilentlyContinue }
     }
+
+    # Add curl to PATH for this session and persistently
+    Add-ToPath $curlDir
+    
+    # Refresh environment to pick up changes
+    Refresh-EnvironmentPath
+    Start-Sleep -Milliseconds 500
 }
+
 function Install-Python {
     Write-Step 2 "Installing Python 3.12.10 + uv"
 
@@ -182,6 +219,7 @@ function Install-Python {
             Write-Skip "Python" "3.12.10 already installed"
             # Still ensure PATH is up to date
             Add-ToPath "$env:LOCALAPPDATA\Programs\Python\Python312"
+            Refresh-EnvironmentPath
             return
         }
     } catch {
@@ -195,10 +233,7 @@ function Install-Python {
     try {
         $ErrorActionPreference = 'Stop'
         Write-Host "Downloading Python 3.12.10..."
-        & curl.exe -L --fail --output $installer $url
-        if ($LASTEXITCODE -ne 0) {
-            throw "curl download failed with code $LASTEXITCODE"
-        }
+        curl.exe -L -o $installer $url
 
         Write-Host "Running Python installer silently..."
         $proc = Start-Process -FilePath $installer `
@@ -218,6 +253,10 @@ function Install-Python {
 
     # Add Python to PATH for this session and persistently
     Add-ToPath "$env:LOCALAPPDATA\Programs\Python\Python312"
+    
+    # Refresh environment to pick up installer's PATH changes
+    Refresh-EnvironmentPath
+    Start-Sleep -Milliseconds 500
 
     # Install uv via pip
     try {
@@ -240,6 +279,7 @@ function Install-Git {
         if ($gitVersion -match 'git version') {
             Write-Skip "Git" "already installed ($gitVersion)"
             Add-ToPath "C:\Program Files\Git\cmd"
+            Refresh-EnvironmentPath
             return
         }
     } catch {
@@ -253,10 +293,7 @@ function Install-Git {
     try {
         $ErrorActionPreference = 'Stop'
         Write-Host "Downloading Git for Windows..."
-        & curl.exe -L --fail --output $installer $url
-        if ($LASTEXITCODE -ne 0) {
-            throw "curl download failed with code $LASTEXITCODE"
-        }
+        curl.exe -L -o $installer $url
 
         Write-Host "Running Git installer silently..."
         $proc = Start-Process -FilePath $installer `
@@ -276,7 +313,38 @@ function Install-Git {
 
     # Add Git to PATH for this session and persistently
     Add-ToPath "C:\Program Files\Git\cmd"
+    
+    # Refresh environment to pick up installer's PATH changes
+    Refresh-EnvironmentPath
+    Start-Sleep -Milliseconds 500
 }
+
+function Configure-Git {
+    param(
+        [string]$email
+    )
+
+    Write-Step 3.5 "Configuring Git"
+
+    try {
+        $ErrorActionPreference = 'Stop'
+        
+        # Extract name from email (part before @)
+        $name = $email -split '@' | Select-Object -First 1
+        
+        # Set global git configuration
+        Write-Host "Setting git global user.name to: $name"
+        & git config --global user.name $name
+        
+        Write-Host "Setting git global user.email to: $email"
+        & git config --global user.email $email
+        
+        Write-Ok "Git configured"
+    } catch {
+        Write-Warn "Git configuration failed: $_"
+    }
+}
+
 function Install-NvmAndNode {
     Write-Step 4 "Installing nvm-windows and Node.js 22.22.0"
 
@@ -299,10 +367,7 @@ function Install-NvmAndNode {
         try {
             $ErrorActionPreference = 'Stop'
             Write-Host "Downloading nvm-setup.exe..."
-            & curl.exe -L --fail --output $installer $url
-            if ($LASTEXITCODE -ne 0) {
-                throw "curl download failed with code $LASTEXITCODE"
-            }
+            curl.exe -L -o $installer $url
 
             Write-Host "Running nvm installer silently..."
             $proc = Start-Process -FilePath $installer `
@@ -320,9 +385,17 @@ function Install-NvmAndNode {
             if (Test-Path $installer) { Remove-Item $installer -Force -ErrorAction SilentlyContinue }
         }
 
+        # Refresh environment to pick up installer's PATH changes
+        Refresh-EnvironmentPath
+        Start-Sleep -Milliseconds 500
+
         # Add nvm to current session PATH so subsequent commands can find it
         Add-ToPath "$env:APPDATA\nvm"
     }
+
+    # Refresh PATH to ensure nvm is available
+    Refresh-EnvironmentPath
+    Start-Sleep -Milliseconds 500
 
     # Detect Node.js 22.22.0 — skip if already the active version
     $nodePresent = $false
@@ -362,6 +435,10 @@ function Install-NvmAndNode {
     # that points to the active Node version; add both nvm home and the symlink path.
     Add-ToPath "$env:APPDATA\nvm"
     Add-ToPath "C:\Program Files\nodejs"
+    
+    # Final refresh for Node paths
+    Refresh-EnvironmentPath
+    Start-Sleep -Milliseconds 500
 }
 function New-SshKeyPair {
     param(
@@ -462,21 +539,22 @@ Host github.com
 # Main installation pipeline
 # ---------------------------------------------------------------------------
 
-try {
-    Install-Curl
-    Install-Python
-    Install-Git
-    Install-NvmAndNode
-    New-SshKeyPair -email $rawEmail -sanitizedEmail $sanitizedEmail
+Install-Curl
+Install-Python
+Install-Git
+Configure-Git -email $rawEmail
+Install-NvmAndNode
+New-SshKeyPair -email $rawEmail -sanitizedEmail $sanitizedEmail
 
-    Write-Host ""
-    Write-Ok "All steps completed successfully."
-} catch {
-    Write-Host ""
-    Write-Host "[ERROR] Installer stopped: $_"
-}
-
-Write-Host "Script finished. This window will stay open. Press Ctrl+C when you want to exit."
-while ($true) {
-    Start-Sleep -Seconds 3600
-}
+Write-Host ""
+Write-Ok "All steps completed successfully."
+Write-Host ""
+Write-Host "IMPORTANT: Close this terminal and open a new PowerShell window for all PATH changes to take effect."
+Write-Host "Then verify the installation by running:"
+Write-Host "  curl --version"
+Write-Host "  python --version"
+Write-Host "  git --version"
+Write-Host "  nvm -v"
+Write-Host "  node --version"
+Write-Host ""
+exit 0
