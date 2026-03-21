@@ -470,4 +470,3 @@ New-SshKeyPair -email $rawEmail -sanitizedEmail $sanitizedEmail
 
 Write-Host ""
 Write-Ok "All steps completed successfully."
-exit 0
