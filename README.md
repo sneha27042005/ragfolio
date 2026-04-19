@@ -1,117 +1,72 @@
-# 🚀 Ragfolio: AI-Powered RAG Portfolio
+🚀 Ragfolio: AI-Powered RAG Portfolio
 
-Ragfolio is a modern, high-performance personal portfolio featuring an integrated AI Chatbot. It uses **RAG (Retrieval-Augmented Generation)** to answer questions about your professional experience using your resume as the primary knowledge source.
+Ragfolio is a modern, high-performance personal portfolio featuring an integrated AI Chatbot. It uses RAG (Retrieval-Augmented Generation) to answer questions about your professional experience using your resume as the primary knowledge source.
 
----
+🌐 Live Demo
 
-## 🛠️ Tech Stack
-- **Frontend**: React, Vite, Tailwind CSS, Framer Motion.
-- **Backend**: FastAPI (Python), Uvicorn.
-- **AI/RAG**: ChromaDB (Vector Store), FastEmbed (Embeddings), Google Gemini Flash 1.5 (LLM).
-- **Package Management**: `uv` (Python), `npm` (Node.js).
+👉 Live Website:
 
----
+https://ragfolio-mc08.onrender.com
 
-## 📋 Prerequisites
-Before you begin, ensure you have the following installed:
-- [Python 3.12+](https://www.python.org/)
-- [uv](https://github.com/astral-sh/uv) (Extremely fast Python package manager)
-- [Node.js & npm](https://nodejs.org/)
-- A **Google Gemini API Key** (Get it from [Google AI Studio](https://aistudio.google.com/))
+👉 API Health Check:
 
-Windows
-
-```powershell  
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-iwr https://raw.githubusercontent.com/HexmosTech/ragfolio/main/one-line-prerequisites-installer.ps1 -OutFile installer.ps1
-powershell -NoExit -ExecutionPolicy Bypass -File .\installer.ps1
-```
-
-Linux
-
-```bash  
-curl -fsSL https://raw.githubusercontent.com/HexmosTech/ragfolio/main/one-line-prerequisites-installer.sh -o one-line-prerequisites-installer.sh && chmod 777 one-line-prerequisites-installer.sh && ./one-line-prerequisites-installer.sh
-```
-
-Video: https://tinyurl.com/ai-job-ready-install-vid
-
-Doc: https://tinyurl.com/ai-job-ready-prerequisites-doc
-
----
-
-## 💻 Local Development
-
-### 1. Setup Environment Variables
-Create a `.env` file in the **root** of the project:
-```env
+https://ragfolio-mc08.onrender.com/api/health
+🛠️ Tech Stack
+Frontend: React, Vite, Tailwind CSS, Framer Motion
+Backend: FastAPI (Python), Uvicorn
+AI/RAG: ChromaDB, FastEmbed, Google Gemini Flash
+Package Management: uv (Python), npm (Node.js)
+📋 Prerequisites
+Python 3.12+
+uv
+Node.js & npm
+Gemini API Key
+💻 Local Development
+1. Environment Setup
 GEMINI_API_KEY=your_api_key_here
-```
-
-Also, ensure `frontend/.env` points to the local backend:
-```env
 VITE_API_BASE_URL=http://localhost:8000/api
-```
-
-### 2. Ingest Resume Data
-This converts everything in `rag/input-data/` into a searchable vector database (recommended: split your info across multiple files, not just a single resume).
-```bash
+2. Create Embeddings
 uv run rag/create-embeddings.py
-```
-
-### 3. Start Backend (Terminal 1)
-```bash
+3. Run Backend
 cd backend
 uv run python main.py
-```
-*Backend runs at `http://localhost:8000`.*
-
-### 4. Start Frontend (Terminal 2)
-```bash
+4. Run Frontend
 cd frontend
 npm install
 npm run dev
-```
-*Frontend runs at `http://localhost:5000` (proxied to port 8000 for `/api` calls).*
+🌐 Deployment (Render)
 
----
+This project is deployed using Render Web Service.
 
-## 🌐 Production Deployment (Render)
+Configuration Used:
+Runtime: Python
+Build Command:
+./render-build.sh
+Start Command:
+python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+Environment Variables:
+GEMINI_API_KEY=your_actual_key
+PYTHON_VERSION=3.12.0
+🏗️ Architecture
+Backend routes are prefixed with /api
+React frontend is served by FastAPI
+RAG system uses vector search + LLM
+🎯 Features
+AI-powered chatbot based on your resume
+Full-stack deployment
+Real-time responses
+Smooth UI with animations
+Production-ready setup
+📌 Notes
+Make sure embeddings are generated before deployment
+Use /api prefix for all backend requests
+Render free tier may take time to wake up
+🔗 Related Projects
 
-This project is optimized for a **Unified Deployment** on Render (serving both Frontend and Backend from a single Python service).
+git-lrc
 
-### Step-by-Step Guide:
+🎉 Status
 
-1. **Push to GitHub**: Ensure all changes are committed and pushed to your repo.
-2. **Create Web Service**: In the [Render Dashboard](https://dashboard.render.com), click **New +** -> **Web Service**.
-3. **Connect Repository**: Select your `ragfolio` repository.
-4. **Configuration**:
-   - **Runtime**: `Python`
-   - **Build Command**: `./render-build.sh`
-   - **Start Command**: `python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
-5. **Advanced / Environment Variables**:
-   - Add `GEMINI_API_KEY`: `(Your actual key)`
-   - Add `PYTHON_VERSION`: `3.12.0`
-6. **Deploy**: Click **Create Web Service**.
-
-### How the Unified Build Works:
-The `./render-build.sh` script automatically:
-1. Builds the React production files into `frontend/dist`.
-2. Installs Python dependencies from `requirements.txt`.
-3. Runs the RAG ingestion script to prepare the database on the server.
-4. The FastAPI backend serves the `dist` folder as static files while maintaining the `/api` endpoints for the chatbot.
-
----
-
-## 🏗️ Architecture Note
-- **API Prefixing**: All backend routes are prefixed with `/api` to avoid collisions with frontend routes.
-- **SPA Support**: The backend includes a catch-all route that serves `index.html` for any non-API path, allowing React Router to work perfectly in production.
-
-
- 
- 
-
----
-
-## �️ Related Projects
-[git-lrc](https://github.com/HexmosTech/git-lrc): Free, Unlimited AI Code Reviews That Run on Commit. Stop bugs before they land.
-
+✅ Backend deployed
+✅ AI chatbot working
+✅ Full-stack integration complete
