@@ -33,7 +33,7 @@ export function Chatbot() {
     setLoading(true)
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/ask`, {
+      const response = await fetch(`${apiBaseUrl}/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
