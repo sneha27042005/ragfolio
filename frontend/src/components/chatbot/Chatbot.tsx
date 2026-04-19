@@ -10,6 +10,8 @@ export function Chatbot() {
   const [loading, setLoading] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '/api' : '')
+
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({
@@ -31,10 +33,7 @@ export function Chatbot() {
     setLoading(true)
 
     try {
-      // In production, the backend serves the frontend from the same origin, so we use a relative path
-      // In development, you would set VITE_API_BASE_URL=http://localhost:8000 in your .env
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-      const response = await fetch(`${apiBaseUrl}/ask`, {
+      const response = await fetch(`${apiBaseUrl}/api/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,18 +41,22 @@ export function Chatbot() {
         body: JSON.stringify({ question: content }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => ({} as any))
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to get an answer from the AI.')
+        const errorDetail = data?.detail || data?.error || response.statusText || 'Failed to get an answer from the AI.'
+        throw new Error(errorDetail)
       }
 
       setMessages((prev) => [...prev, { role: 'assistant', content: data.answer }])
     } catch (error: any) {
-      const errorMessage = error.message || 'Network error. Please make sure the backend is running.'
+      const errorMessage = error?.message || 'Network error. Please make sure the backend is running.'
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: `Sorry, I encountered an error: ${errorMessage}` },
+        {
+          role: 'assistant',
+          content: `Sorry, I encountered an error: ${errorMessage}. If this happens when you ask a question, please make sure the backend is running and the API URL is configured correctly.`,
+        },
       ])
     } finally {
       setLoading(false)

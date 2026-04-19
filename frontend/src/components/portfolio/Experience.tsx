@@ -15,12 +15,12 @@ export function Experience() {
                     >
                         <div className="absolute w-3 h-3 bg-blue-500 rounded-full -left-[6.5px] top-1.5 ring-4 ring-zinc-950"></div>
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
-                            <h3 className="text-lg font-medium text-white">Software Engineer</h3>
-                            <span className="text-sm text-zinc-500">Jan 2023 - Present</span>
+                            <h3 className="text-lg font-medium text-white">Intern – Hexinox Company</h3>
+                            <span className="text-sm text-zinc-500">Internship</span>
                         </div>
-                        <p className="text-blue-400 text-sm mb-3">Company Name</p>
+                        <p className="text-blue-400 text-sm mb-3">Hexinox Company</p>
                         <p className="text-zinc-400 text-sm leading-relaxed">
-                            Description of your role and key achievements. Mention specific technologies and impact.
+                            Gained practical MERN stack experience by building React UI, developing Node.js backend logic, and working with MongoDB. Focused on REST API workflows, frontend-backend integration, and AI fundamentals during the internship.
                         </p>
                     </motion.div>
 
@@ -33,12 +33,12 @@ export function Experience() {
                     >
                         <div className="absolute w-3 h-3 bg-zinc-700 rounded-full -left-[6.5px] top-1.5 ring-4 ring-zinc-950"></div>
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
-                            <h3 className="text-lg font-medium text-white">Intern developer</h3>
-                            <span className="text-sm text-zinc-500">Jun 2022 - Dec 2022</span>
+                            <h3 className="text-lg font-medium text-white">LocalGig – Service Platform</h3>
+                            <span className="text-sm text-zinc-500">Academic Project</span>
                         </div>
-                        <p className="text-blue-400 text-sm mb-3">Previous Company</p>
+                        <p className="text-blue-400 text-sm mb-3">Full-stack web application</p>
                         <p className="text-zinc-400 text-sm leading-relaxed">
-                            Description of tasks and what you learned during this period.
+                            Designed and implemented a full-stack service marketplace using React, Node.js, and MySQL, with RESTful APIs and responsive UI for connecting users to local service providers.
                         </p>
                     </motion.div>
                 </div>

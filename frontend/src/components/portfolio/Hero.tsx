@@ -10,11 +10,11 @@ export function Hero() {
         className="max-w-4xl mx-auto text-center"
       >
         <h1 className="text-5xl sm:text-7xl font-bold text-white mb-6 tracking-tight">
-          Hi, I'm <span className="text-blue-500">Developer Name</span>
+          Hi, I'm <span className="text-blue-500">Sneha R</span>
         </h1>
         <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          Full-stack developer specializing in building exceptional digital experiences.
-          Currently focused on creating scalable, user-centric applications.
+          Third-year B.Tech CSE student building full-stack web applications with React, Node.js, and MySQL.
+          I focus on scalable, user-centered solutions that bridge frontend interfaces and backend systems.
         </p>
       </motion.div>
     </section>

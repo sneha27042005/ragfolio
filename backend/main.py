@@ -1,4 +1,7 @@
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import logging
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,9 +10,9 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Any, Dict
 try:
-    from .rag_query import answer_question
+    from backend.rag_query import answer_question, answer_question_debug
 except ImportError:
-    from rag_query import answer_question
+    from rag_query import answer_question, answer_question_debug
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -80,13 +83,24 @@ async def ask(request: AskRequest):
         # Log the incoming question
         logger.debug(f"Incoming question: {request.question}")
 
-        # Integrate with the RAG query engine
-        answer = answer_question(request.question)
+        # Use debug-capable RAG pipeline
+        debug_info = answer_question_debug(request.question)
 
-        # Log the response
-        logger.debug(f"Generated answer: {answer}")
+        # Log retrieved context items
+        retrieved = debug_info["retrieved"]
+        logger.debug(f"Retrieved {len(retrieved)} context items:")
+        for i, item in enumerate(retrieved):
+            logger.debug(f"  Item {i+1}: ID={item['id']}, Distance={item['distance']}, Preview='{item['content'][:100]}...'")
 
-        return AskResponse(answer=answer)
+        # Log the exact Gemini input prompt
+        gemini_prompt = debug_info["gemini_prompt"]
+        logger.debug(f"Gemini input prompt: {gemini_prompt}")
+
+        # Log the Gemini output
+        gemini_output = debug_info["gemini_output"]
+        logger.debug(f"Gemini output: {gemini_output}")
+
+        return AskResponse(answer=debug_info["answer"])
     except Exception as e:
         # Log the exception with stack trace
         logger.exception("An error occurred during RAG processing.")

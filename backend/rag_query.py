@@ -142,3 +142,75 @@ def answer_question(question: str) -> str:
 
     prompt = build_prompt(question, context_chunks)
     return call_gemini(prompt)
+
+
+def answer_question_debug(question: str) -> dict:
+    """Debug-capable RAG pipeline returning answer and debug info."""
+    retrieved_items = retrieve_context_debug(question, top_k=3)
+    context_chunks = [item["content"] for item in retrieved_items]
+    if not context_chunks:
+        answer = (
+            "I could not find any resume context to answer from. "
+            "Make sure the vector store has been built by running rag/ingest.py."
+        )
+        return {
+            "answer": answer,
+            "retrieved": [],
+            "gemini_prompt": "",
+            "gemini_output": answer,
+        }
+
+    prompt = build_prompt(question, context_chunks)
+    gemini_output = call_gemini(prompt)
+    return {
+        "answer": gemini_output,
+        "retrieved": retrieved_items,
+        "gemini_prompt": prompt,
+        "gemini_output": gemini_output,
+    }
+
+
+def retrieve_context_debug(question: str, top_k: int = 3) -> List[dict]:
+    """Embed the question and retrieve the most similar resume chunks with debug info."""
+    if not question.strip():
+        return []
+
+    model = _get_embedding_model()
+    collection = _get_chroma_collection()
+
+    query_embedding = next(model.embed([question]))
+    
+    # Try to query with include, but fallback if not supported
+    try:
+        result = collection.query(
+            query_embeddings=[query_embedding.tolist()],
+            n_results=top_k,
+            include=["documents", "metadatas", "distances"]
+        )
+    except (TypeError, ValueError):
+        # Fallback for older Chroma versions or validation errors
+        result = collection.query(
+            query_embeddings=[query_embedding.tolist()],
+            n_results=top_k,
+        )
+
+    documents = result.get("documents") or []
+    if not documents:
+        return []
+    
+    docs = documents[0]
+    metadatas = result.get("metadatas", [[]] * len(docs))
+    distances = result.get("distances", [[]] * len(docs))
+    ids = result.get("ids", [[]] * len(docs))  # May not be present
+    
+    retrieved = []
+    for i, doc in enumerate(docs):
+        item = {
+            "content": doc,
+            "metadata": metadatas[0][i] if i < len(metadatas[0]) else {},
+            "distance": distances[0][i] if i < len(distances[0]) else None,
+            "id": ids[0][i] if ids and i < len(ids[0]) else f"chunk_{i}",
+        }
+        retrieved.append(item)
+    
+    return retrieved

@@ -13,8 +13,8 @@ export function Projects() {
             whileHover={{ scale: 1.02 }}
             className="p-6 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-default"
           >
-            <h3 className="font-medium text-white text-lg">Project one</h3>
-            <p className="text-sm text-zinc-400 mt-2 leading-relaxed">Short description of the project and technologies used.</p>
+            <h3 className="font-medium text-white text-lg">LocalGig – Service Platform</h3>
+            <p className="text-sm text-zinc-400 mt-2 leading-relaxed">Full-stack platform connecting users with local service providers. Built with React frontend, Node.js REST APIs, and MySQL database schema for structured service listings.</p>
           </motion.div>
 
           <motion.div
@@ -25,8 +25,8 @@ export function Projects() {
             whileHover={{ scale: 1.02 }}
             className="p-6 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-default"
           >
-            <h3 className="font-medium text-white text-lg">Project two</h3>
-            <p className="text-sm text-zinc-400 mt-2 leading-relaxed">Short description of the project and technologies used.</p>
+            <h3 className="font-medium text-white text-lg">MERN Internship Work</h3>
+            <p className="text-sm text-zinc-400 mt-2 leading-relaxed">Hands-on MERN stack development at Hexinox Company, with React UI implementation, Node.js backend workflows, and MongoDB-based data handling supported by modern development practices.</p>
           </motion.div>
         </div>
       </div>
